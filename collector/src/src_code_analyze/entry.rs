@@ -1,8 +1,9 @@
-use std::fs::{create_dir, create_dir_all, File};
+use std::fs::{create_dir_all, File};
 use std::io::BufWriter;
 use std::path::PathBuf;
 
 use crate::src_code_analyze::ops::analyze_ops;
+use crate::src_code_analyze::tex_writer::write_tex;
 use crate::statistics::compile_time_stat::{CompileTimeBenchResult, CompileTimeResultSet};
 
 use crate::{compile_time::discover_benchmark_suit, src_code_analyze::analyzer::analyze_benchmark};
@@ -35,6 +36,8 @@ pub fn src_code_analyze(
         )?),
         &results,
     )?;
+
+    write_tex(&out_path, &results)?;
 
     Ok(out_path)
 }
