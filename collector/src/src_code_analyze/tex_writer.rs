@@ -12,16 +12,17 @@ pub fn write_tex(path: &Path, data: &CompileTimeResultSet) -> anyhow::Result<Pat
 
     for (metric, data) in datas {
         let mut writer = BufWriter::new(File::create(
-            path.join(format!("src-code-analyze-results-{metric}.json")),
+            path.join(format!("src-code-analyze-results-{metric}.tex")),
         )?);
+
+        let metric = metric.replace("_", "\\_");
         let _ = writer.write(
             format!("\\begin{{table}}[]\n\
             \\caption{{src-code-analyze-result}}\n\
-            \\adjustbox{{max width=\\textwidth}}\
+            \\adjustbox{{max width=\\textwidth}}{{\n\
+            \\begin{{tabular}}{{lc|lc|lc}}\n\
             \\toprule\n\
-            \\begin{{tabular}}{{ll|ll|ll}}\n\
-            \\toprule\n
-            \\textbf{{Benchmark}} & \\textbf{metric} & \\textbf{{Benchmark}} & \\textbf{metric} & \\textbf{{Benchmark}} & \\textbf{metric}\\\\ \\midrule\n",)
+            \\textbf{{Benchmark}} & \\textbf{{{metric}}} & \\textbf{{Benchmark}} & \\textbf{{{metric}}} & \\textbf{{Benchmark}} & \\textbf{{{metric}}}\\\\ \\midrule\n",)
             .as_bytes(),
         )?;
 
@@ -30,13 +31,15 @@ pub fn write_tex(path: &Path, data: &CompileTimeResultSet) -> anyhow::Result<Pat
         let _ = writer.write(
             data.into_iter()
                 .map(|(benchmark, stat)| {
-                    let mut s = format!("\\texttt{benchmark} & {stat}");
-                    if i < j {
-                        s = s + "&";
+                    let mut s = format!("\\texttt{{{benchmark}}} & {stat}");
+                    if i == 0 {
+                        i += 1;
+                    } else if i < j {
+                        s = "&".to_owned() + &s;
                         i += 1;
                     } else {
-                        s = s + "\\\\\n";
-                        i = 0;
+                        s = "\\\\\n".to_owned() + &s;
+                        i = 1;
                     }
                     s
                 })
@@ -44,10 +47,14 @@ pub fn write_tex(path: &Path, data: &CompileTimeResultSet) -> anyhow::Result<Pat
                 .as_bytes(),
         );
 
+        if i < j {
+            let _ = writer.write("\\\\".as_bytes());
+        }
+
         let _ = writer.write(
-            "\\bottomrule\
-            \\end{tabular}}\
-            \\end{table}"
+            "\n\\bottomrule\n\
+            \\end{tabular}}\n\
+            \\end{table}\n"
                 .as_bytes(),
         )?;
     }
@@ -73,9 +80,48 @@ fn collect_metrics(data: &CompileTimeResultSet) -> HashMap<String, Vec<(String, 
         })
     });
 
-    collected_data
-        .iter_mut()
-        .for_each(|(_, d)| d.sort_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()));
+    collected_data.iter_mut().for_each(|(_, d)| {
+        d.sort_by(|(a, _), (b, _)| a.to_lowercase().partial_cmp(&b.to_lowercase()).unwrap())
+    });
 
     collected_data
+}
+
+#[cfg(test)]
+mod test_tex_writer {
+    use std::{
+        fs::{remove_file, File},
+        io::{BufReader, Read},
+        path::PathBuf,
+    };
+
+    use super::write_tex;
+
+    #[test]
+    fn test_tex_writer() {
+        let out_path = PathBuf::from("test/src_code_analyze/tex_writer");
+        let data = PathBuf::from("test/src_code_analyze/tex_writer/data.json");
+        let file = File::open(&data).unwrap();
+        let data = serde_json::from_reader(BufReader::new(file)).unwrap();
+
+        write_tex(&out_path, &data).unwrap();
+        let verify_p = PathBuf::from("test/src_code_analyze/tex_writer/data-check.tex");
+
+        let p = PathBuf::from(
+            "test/src_code_analyze/tex_writer/src-code-analyze-results-slice_from_raw_parts.tex",
+        );
+        let mut buf = vec![];
+        let f = File::open(&p).unwrap();
+        let mut reader = BufReader::new(f);
+        let _ = reader.read_to_end(&mut buf);
+
+        let mut buf_verify = vec![];
+        let f = File::open(&verify_p).unwrap();
+        let mut reader = BufReader::new(f);
+        let _ = reader.read_to_end(&mut buf_verify);
+
+        assert_eq!(buf, buf_verify);
+
+        remove_file(p).unwrap();
+    }
 }
