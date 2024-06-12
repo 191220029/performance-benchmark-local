@@ -527,6 +527,57 @@
                     }
                 }
             ]
+        },
+        {
+            "benchmark": "emu",
+            "iterations": 0,
+            "result_vec": [
+                {
+                    "benchmark": "emu",
+                    "iteration": 0,
+                    "profile": "Check",
+                    "scenario": "Full",
+                    "stats": {
+                        "stats": {
+                            "slice_from_raw_parts": 260.0
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "benchmark": "crossbeam",
+            "iterations": 0,
+            "result_vec": [
+                {
+                    "benchmark": "crossbeam",
+                    "iteration": 0,
+                    "profile": "Check",
+                    "scenario": "Full",
+                    "stats": {
+                        "stats": {
+                            "slice_from_raw_parts": 3348.0
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "benchmark": "rayon",
+            "iterations": 0,
+            "result_vec": [
+                {
+                    "benchmark": "rayon",
+                    "iteration": 0,
+                    "profile": "Check",
+                    "scenario": "Full",
+                    "stats": {
+                        "stats": {
+                            "slice_from_raw_parts": 3804.0
+                        }
+                    }
+                }
+            ]
         }
     ]
 }
