@@ -27,6 +27,7 @@ use crate::{
     statistics::compile_time_stat::CompileTimeResultSet, toolchain::get_local_toolchain,
 };
 
+mod ast_analyze;
 mod benchmark;
 mod compile_time;
 mod csv_transfer;
