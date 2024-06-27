@@ -1,5 +1,5 @@
 mod analyzer;
-mod dependancy;
+pub(crate) mod dependancy;
 pub(crate) mod entry;
 mod ops;
-mod tex_writer;
+pub(crate) mod tex_writer;
