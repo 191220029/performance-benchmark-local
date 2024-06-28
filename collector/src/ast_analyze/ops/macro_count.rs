@@ -5,8 +5,8 @@ use tree_sitter::Tree;
 
 pub fn macro_count(tree: &Tree) -> (String, f64) {
     let mut cursor = tree.walk();
-    let mut macro_calls = 1;
-    let mut macro_definitions = 1;
+    let mut macro_calls = 0;
+    let mut macro_definitions = 0;
 
     loop {
         let node = cursor.node();
@@ -27,9 +27,12 @@ pub fn macro_count(tree: &Tree) -> (String, f64) {
 
         while !cursor.goto_next_sibling() {
             if !cursor.goto_parent() {
+                if macro_calls == macro_definitions && macro_calls == 0 {
+                    return ("macro".to_string(), 0.);
+                }
                 return (
                     "macro".to_string(),
-                    macro_calls as f64 / macro_definitions as f64,
+                    (macro_calls + 1) as f64 / (macro_definitions + 1) as f64,
                 );
             }
         }

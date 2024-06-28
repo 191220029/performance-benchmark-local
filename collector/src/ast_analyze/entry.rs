@@ -127,5 +127,6 @@ mod test_ast {
         let benchmark_dir = PathBuf::from("test/binary_size/benchmarks");
         let out_dir = PathBuf::from("test/ast_analyze/out");
         let p = ast_code_analyze(benchmark_dir.clone(), benchmark_dir, out_dir).unwrap();
+        assert!(p.exists());
     }
 }

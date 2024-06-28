@@ -1,8 +1,8 @@
 use tree_sitter::Tree;
 
 use crate::ast_analyze::ops::{
-    avg_args::avg_args, count_nodes::count_nodes, fn_avg_depth::fn_avg_depth,
-    macro_count::macro_count,
+    avg_args::avg_args, count_nodes::count_nodes, field_count::field_count,
+    fn_avg_depth::fn_avg_depth, macro_count::macro_count,
 };
 
 pub fn ast_ops() -> Vec<Box<dyn Fn(&Tree) -> (String, f64)>> {
@@ -11,5 +11,6 @@ pub fn ast_ops() -> Vec<Box<dyn Fn(&Tree) -> (String, f64)>> {
         Box::new(fn_avg_depth),
         Box::new(avg_args),
         Box::new(macro_count),
+        Box::new(field_count),
     ]
 }
