@@ -19,16 +19,10 @@ pub fn fn_avg_depth(tree: &Tree) -> (String, f64) {
         while !cursor.goto_next_sibling() {
             if !cursor.goto_parent() {
                 let y = total_depth as f64 / function_count as f64;
-                if  y.is_nan() {
-                    return (
-                        "fn_avg_depth".to_string(),
-                        0.,
-                    );
+                if y.is_nan() {
+                    return ("fn_avg_depth".to_string(), 0.);
                 }
-                return (
-                    "fn_avg_depth".to_string(),
-                    y,
-                );
+                return ("fn_avg_depth".to_string(), y);
             }
         }
     }
