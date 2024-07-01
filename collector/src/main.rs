@@ -6,6 +6,7 @@ use std::{
 };
 
 use anyhow::{bail, Context, Ok};
+use ast_analyze::entry::ast_code_analyze;
 use benchmark::scenario::Scenario;
 use clap::Parser;
 use compile_time::{
@@ -315,6 +316,20 @@ fn main_result() -> anyhow::Result<i32> {
             dependency_dir,
             out_path,
         } => match src_code_analyze(bench_dir, dependency_dir, out_path) {
+            anyhow::Result::Ok(p) => {
+                println!(
+                    "Write analyze result to {}.",
+                    p.as_os_str().to_str().unwrap()
+                );
+                Ok(0)
+            }
+            Err(e) => bail!("{}", e),
+        },
+        Commands::ASTAnalyze {
+            bench_dir,
+            dependency_dir,
+            out_path,
+        } => match ast_code_analyze(bench_dir, dependency_dir, out_path) {
             anyhow::Result::Ok(p) => {
                 println!(
                     "Write analyze result to {}.",

@@ -18,6 +18,12 @@ pub fn avg_args(tree: &Tree) -> (String, f64) {
 
         while !cursor.goto_next_sibling() {
             if !cursor.goto_parent() {
+                if function_count == 0 {
+                    return (
+                        "avg_args".to_string(),
+                        0.,
+                    );
+                }
                 return (
                     "avg_args".to_string(),
                     total_params as f64 / function_count as f64,

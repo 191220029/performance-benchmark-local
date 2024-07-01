@@ -9,7 +9,7 @@ use std::{
 
 use nalgebra::DMatrix;
 
-use crate::pca_analysis::pca_data::PcaRawData;
+use crate::{pca_analysis::pca_data::PcaRawData, statistics::compile_time_stat::CompileTimeStatistic};
 
 use crate::mir_analyze::mir::function_pattern::*;
 use crate::mir_analyze::mir::io_function::*;
@@ -250,7 +250,6 @@ pub fn into_vec<X: Clone + Ord, Y: Clone + Ord, T: Copy + Into<f64>>(
 
     data
 }
-
 /// Sort TableData by axis X and Y.
 pub fn sort<X: Ord + Clone, Y: Ord + Clone, T: Clone>(
     table_data: &TableDatas<X, Y, T>,
@@ -268,6 +267,22 @@ pub fn sort<X: Ord + Clone, Y: Ord + Clone, T: Clone>(
         .collect::<Vec<(X, Vec<(Y, T)>)>>();
     data_sorted.sort_by(|a, b| a.0.cmp(&b.0));
     data_sorted
+}
+
+pub fn from_compile_time_statistic(value: Vec<CompileTimeStatistic>) -> TableDatas<String, String, f64> {
+    let mut datas = TableDatas::<String, String, f64>::default();
+    value.first().unwrap().statistic_vec.iter().for_each(|(m, _)| {
+        datas.insert(m.clone(), HashMap::from_iter(value.iter().map(|stat| {
+            (stat.name.clone(), 0.)
+        })));
+    });
+
+    value.into_iter().for_each(|v|  {
+        v.statistic_vec.into_iter().for_each(|(m, val)| {
+            *datas.get_mut(&m).unwrap().get_mut(&v.name).unwrap() = val.algebraic_mean;
+        });
+    });
+    datas
 }
 
 #[cfg(test)]

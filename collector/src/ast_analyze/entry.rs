@@ -94,13 +94,12 @@ fn analyze_dir(
                     .set_language(&tree_sitter_rust::language())
                     .expect("Error loading Rust grammar");
                 let tree = parser.parse(buf, None).unwrap();
-                assert!(!tree.root_node().has_error());
-                // if let Ok(buf) = String::from_utf8(buf) {
-                ops.iter().for_each(|op| {
-                    let t = op(&tree);
-                    stats.add_or_insert(t.0, t.1)
-                });
-                // }
+                if !(!tree.root_node().has_error()) {
+                    ops.iter().for_each(|op| {
+                        let t = op(&tree);
+                        stats.add_or_insert(t.0, t.1)
+                    });
+                }
             } else if entry.file_name().to_str().unwrap().eq("Cargo.lock") {
                 for d in read_dependencies(&entry.path())? {
                     let path = &d.path(dependency_dir);

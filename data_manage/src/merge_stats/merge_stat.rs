@@ -6,6 +6,7 @@ use std::{
 
 use collector::{
     benchmark::profile::Profile,
+    mir_analyze::data::table_data::{from_compile_time_statistic, TableDatas},
     statistics::compile_time_stat::{CompileTimeResultSet, CompileTimeStatistics},
 };
 
@@ -63,6 +64,10 @@ pub fn merge_compile_time_stats(
         &merged_data,
     )?;
 
+    serde_json::to_writer(
+        BufWriter::new(File::create(&out_dir.join("merged-table-data.json"))?),
+        &from_compile_time_statistic(merged_stats),
+    )?;
     Ok(out_dir)
 }
 
