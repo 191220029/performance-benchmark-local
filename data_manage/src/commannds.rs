@@ -176,6 +176,9 @@ pub enum Commands {
         /// The maximun number principle components.
         #[clap(long = "max-component-num")]
         max_component_num: u32,
+        /// The compared table data fmt file.
+        #[clap(long = "table-data-cmp")]
+        table_data_cmp_path: Option<PathBuf>,
     },
 
     /// Normalize statistic by wall-time.

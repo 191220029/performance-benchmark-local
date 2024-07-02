@@ -3,7 +3,7 @@ extern crate tree_sitter_rust;
 
 use tree_sitter::Tree;
 
-pub fn macro_count(tree: &Tree) -> (String, f64) {
+pub fn macro_count(tree: &Tree, _: &[u8]) -> (String, f64) {
     let mut cursor = tree.walk();
     let mut macro_calls = 0;
     let mut macro_definitions = 0;

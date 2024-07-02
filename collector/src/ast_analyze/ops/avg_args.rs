@@ -1,6 +1,6 @@
 use tree_sitter::{Node, Tree};
 
-pub fn avg_args(tree: &Tree) -> (String, f64) {
+pub fn avg_args(tree: &Tree, _: &[u8]) -> (String, f64) {
     let mut cursor = tree.walk();
     let mut total_params = 0;
     let mut function_count = 0;

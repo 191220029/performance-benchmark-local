@@ -55,16 +55,16 @@ pub fn draw_coordinate_map_2d(
 
 pub type Coordinate = (f64, f64);
 
-fn get_coordinate_2d(
+pub(super) fn get_coordinate_2d(
     data: DVector<f64>,
     feature_x: &DVector<f64>,
     feature_y: &DVector<f64>,
 ) -> Coordinate {
-    let mut data = data.to_owned().normalize();
-    data.row_iter_mut().for_each(|mut r| {
-        let x = r.get_mut(0).unwrap();
-        *x *= 2.;
-    });
+    let data = data.to_owned().normalize();
+    // data.row_iter_mut().for_each(|mut r| {
+    //     let x = r.get_mut(0).unwrap();
+    //     *x *= 2.;
+    // });
     (data.dot(feature_x), data.dot(feature_y))
 }
 

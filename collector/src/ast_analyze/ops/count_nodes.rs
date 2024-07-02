@@ -1,6 +1,6 @@
 use tree_sitter::Tree;
 
-pub fn count_nodes(tree: &Tree) -> (String, f64) {
+pub fn count_nodes(tree: &Tree, _: &[u8]) -> (String, f64) {
     let cursor = tree.walk();
 
     let mut cursor = tree.walk();

@@ -55,9 +55,9 @@ pub fn ast_code_analyze(
 fn analyze_benchmark(
     benchmark: &Benchamrk,
     dependency_dir: &PathBuf,
-    ops: &Vec<Box<dyn Fn(&Tree) -> (String, f64)>>,
+    ops: &Vec<Box<dyn Fn(&Tree, &[u8]) -> (String, f64)>>,
 ) -> CompileTimeResult {
-    eprintln!(
+    println!(
         "analyzing benchmark {} {}",
         benchmark.name,
         benchmark.path.to_str().unwrap()
@@ -75,38 +75,42 @@ fn analyze_benchmark(
 fn analyze_dir(
     p: &PathBuf,
     dependency_dir: &PathBuf,
-    ops: &Vec<Box<dyn Fn(&Tree) -> (String, f64)>>,
+    ops: &Vec<Box<dyn Fn(&Tree, &[u8]) -> (String, f64)>>,
     analyzed_dependency: &mut HashSet<PathBuf>,
 ) -> anyhow::Result<Stats> {
     let mut stats = Stats::new();
     for entry in p.read_dir()? {
         let entry = entry?;
         if entry.file_type()?.is_dir() {
-            stats += analyze_dir(&entry.path(), dependency_dir, ops, analyzed_dependency)?;
+            stats += analyze_dir(&entry.path(), dependency_dir, ops, analyzed_dependency).unwrap();
         } else if entry.file_type()?.is_file() {
             if entry.file_name().to_str().unwrap().ends_with(".rs") {
-                let mut reader = BufReader::new(File::open(entry.path())?);
+                let mut reader = BufReader::new(File::open(entry.path()).unwrap());
                 let mut buf = vec![];
-                reader.read_to_end(&mut buf)?;
+                if reader.read_to_end(&mut buf).is_err() {
+                    continue;
+                }
 
                 let mut parser = Parser::new();
-                parser
-                    .set_language(&tree_sitter_rust::language())
-                    .expect("Error loading Rust grammar");
-                let tree = parser.parse(buf, None).unwrap();
-                if !(!tree.root_node().has_error()) {
-                    ops.iter().for_each(|op| {
-                        let t = op(&tree);
-                        stats.add_or_insert(t.0, t.1)
-                    });
+                if parser.set_language(&tree_sitter_rust::language()).is_err() {
+                    continue;
                 }
+                let tree = parser.parse(&buf, None).unwrap();
+                // eprintln!("{:?} {:?}", entry.file_name(), tree);
+                // if !(!tree.root_node().has_error()) {
+                ops.iter().for_each(|op| {
+                    let t = op(&tree, &buf);
+                    stats.add_or_insert(t.0, t.1)
+                });
+                // }
             } else if entry.file_name().to_str().unwrap().eq("Cargo.lock") {
-                for d in read_dependencies(&entry.path())? {
+                for d in read_dependencies(&entry.path()).unwrap() {
                     let path = &d.path(dependency_dir);
                     if path.exists() && !analyzed_dependency.contains(path) {
                         println!("  |---analyzing {}", d);
                         analyzed_dependency.insert(path.clone());
-                        stats += analyze_dir(path, dependency_dir, ops, analyzed_dependency)?;
+                        stats +=
+                            analyze_dir(path, dependency_dir, ops, analyzed_dependency).unwrap();
                     }
                 }
             }

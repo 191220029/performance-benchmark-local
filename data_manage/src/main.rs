@@ -108,7 +108,13 @@ fn main() {
             table_data_path,
             out_dir,
             max_component_num,
-        } => match pca_entry(&table_data_path, out_dir, max_component_num) {
+            table_data_cmp_path,
+        } => match pca_entry(
+            &table_data_path,
+            table_data_cmp_path,
+            out_dir,
+            max_component_num,
+        ) {
             Ok(p) => println!("Write Pca analysis result to {}", p.to_str().unwrap()),
             Err(e) => eprintln!("{}", e),
         },

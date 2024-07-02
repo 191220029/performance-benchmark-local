@@ -1,6 +1,6 @@
-use tree_sitter::{Node, Parser, Tree};
+use tree_sitter::{Node, Tree};
 
-pub fn field_count(tree: &Tree) -> (String, f64) {
+pub fn field_count(tree: &Tree, _: &[u8]) -> (String, f64) {
     let mut cursor = tree.walk();
     let mut fields = 0;
     let mut type_count = 0;
