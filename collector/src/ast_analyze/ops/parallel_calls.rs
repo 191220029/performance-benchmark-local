@@ -2,10 +2,11 @@ use std::collections::HashSet;
 
 use tree_sitter::{Node, Tree};
 
+use crate::execute::Stats;
 // List of keywords or function names related to concurrency or parallelism
 const CONCURRENCY_KEYWORDS: &[&str] = &["std::thread", "tokio", "rayon", "async", "await"];
 
-pub fn parallel_calls(tree: &Tree, src_code: &[u8]) -> (String, f64) {
+pub fn parallel_calls(tree: &Tree, src_code: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
     let mut cursor = tree.walk();
     let mut concurrency_calls = 0;
     let mut pool: HashSet<String> =
@@ -93,7 +94,7 @@ fn is_concurrency_related(code: &str, pool: &HashSet<String>) -> bool {
 mod test_struct_methods {
     use tree_sitter::Parser;
 
-    use crate::ast_analyze::ops::parallel_calls::parallel_calls;
+    use crate::{ast_analyze::ops::parallel_calls::parallel_calls, execute::Stats};
 
     #[test]
     fn test_struct_methods() {
@@ -121,7 +122,12 @@ mod test_struct_methods {
             "#;
 
         let tree = parser.parse(source_code, None).unwrap();
-        let (_, parallel_calls) = parallel_calls(&tree, source_code.as_bytes());
+        let (_, parallel_calls) = parallel_calls(
+            &tree,
+            source_code.as_bytes(),
+            &mut Stats::default(),
+            &String::default(),
+        );
 
         assert_eq!(parallel_calls, 4.);
     }

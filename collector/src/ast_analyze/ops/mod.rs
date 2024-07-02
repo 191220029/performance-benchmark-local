@@ -1,7 +1,9 @@
 pub mod avg_args;
 pub mod count_nodes;
 pub mod field_count;
+pub mod file_number;
 pub mod fn_avg_depth;
 pub mod macro_count;
+pub mod node_type;
 pub mod parallel_calls;
 pub mod struct_methods;

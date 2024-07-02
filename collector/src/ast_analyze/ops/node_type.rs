@@ -1,8 +1,7 @@
 use tree_sitter::Tree;
 
 use crate::execute::Stats;
-
-pub fn count_nodes(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
+pub fn node_type(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
     let mut cursor = tree.walk();
     let mut count = 0;
 
@@ -19,7 +18,7 @@ pub fn count_nodes(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String,
             // If no next sibling, go up to the parent
             if !cursor.goto_parent() {
                 // If no parent, we've reached the root again
-                return ("Node count".to_string(), count as f64);
+                return ("node_count".to_string(), count as f64);
             }
         }
     }

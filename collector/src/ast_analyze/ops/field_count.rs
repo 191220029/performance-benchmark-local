@@ -1,6 +1,8 @@
 use tree_sitter::{Node, Tree};
 
-pub fn field_count(tree: &Tree, _: &[u8]) -> (String, f64) {
+use crate::execute::Stats;
+
+pub fn field_count(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
     let mut cursor = tree.walk();
     let mut fields = 0;
     let mut type_count = 0;

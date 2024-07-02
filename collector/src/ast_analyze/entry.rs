@@ -1,5 +1,5 @@
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fs::{create_dir_all, File},
     io::{BufReader, BufWriter, Read},
     path::PathBuf,
@@ -30,11 +30,18 @@ pub fn ast_code_analyze(
 
     let mut results = vec![];
 
+    let cached_dependency = &mut HashMap::default();
+
     for b in benchmarks {
         results.push(CompileTimeBenchResult {
             benchmark: b.name.clone(),
             iterations: 0,
-            result_vec: vec![analyze_benchmark(&b, &dependency_dir, &ops)],
+            result_vec: vec![analyze_benchmark(
+                &b,
+                &dependency_dir,
+                &ops,
+                cached_dependency,
+            )],
         });
     }
 
@@ -55,14 +62,23 @@ pub fn ast_code_analyze(
 fn analyze_benchmark(
     benchmark: &Benchamrk,
     dependency_dir: &PathBuf,
-    ops: &Vec<Box<dyn Fn(&Tree, &[u8]) -> (String, f64)>>,
+    ops: &Vec<Box<dyn Fn(&Tree, &[u8], &mut Stats, &String) -> (String, f64)>>,
+    cached_dependency: &mut HashMap<PathBuf, Stats>,
 ) -> CompileTimeResult {
     println!(
         "analyzing benchmark {} {}",
         benchmark.name,
         benchmark.path.to_str().unwrap()
     );
-    let stats = analyze_dir(&benchmark.path, dependency_dir, ops, &mut HashSet::new()).unwrap();
+    let stats = analyze_dir(
+        &benchmark.path,
+        &benchmark.name,
+        dependency_dir,
+        ops,
+        &mut HashSet::default(),
+        cached_dependency,
+    )
+    .unwrap();
     CompileTimeResult::new(
         benchmark.name.clone(),
         0,
@@ -74,15 +90,25 @@ fn analyze_benchmark(
 
 fn analyze_dir(
     p: &PathBuf,
+    benchmark_name: &String,
     dependency_dir: &PathBuf,
-    ops: &Vec<Box<dyn Fn(&Tree, &[u8]) -> (String, f64)>>,
+    ops: &Vec<Box<dyn Fn(&Tree, &[u8], &mut Stats, &String) -> (String, f64)>>,
     analyzed_dependency: &mut HashSet<PathBuf>,
+    cached_dependency: &mut HashMap<PathBuf, Stats>,
 ) -> anyhow::Result<Stats> {
     let mut stats = Stats::new();
     for entry in p.read_dir()? {
         let entry = entry?;
         if entry.file_type()?.is_dir() {
-            stats += analyze_dir(&entry.path(), dependency_dir, ops, analyzed_dependency).unwrap();
+            stats += analyze_dir(
+                &entry.path(),
+                benchmark_name,
+                dependency_dir,
+                ops,
+                analyzed_dependency,
+                cached_dependency,
+            )
+            .unwrap();
         } else if entry.file_type()?.is_file() {
             if entry.file_name().to_str().unwrap().ends_with(".rs") {
                 let mut reader = BufReader::new(File::open(entry.path()).unwrap());
@@ -96,21 +122,31 @@ fn analyze_dir(
                     continue;
                 }
                 let tree = parser.parse(&buf, None).unwrap();
-                // eprintln!("{:?} {:?}", entry.file_name(), tree);
-                // if !(!tree.root_node().has_error()) {
                 ops.iter().for_each(|op| {
-                    let t = op(&tree, &buf);
+                    let t = op(&tree, &buf, &mut stats, benchmark_name);
                     stats.add_or_insert(t.0, t.1)
                 });
-                // }
             } else if entry.file_name().to_str().unwrap().eq("Cargo.lock") {
                 for d in read_dependencies(&entry.path()).unwrap() {
                     let path = &d.path(dependency_dir);
                     if path.exists() && !analyzed_dependency.contains(path) {
                         println!("  |---analyzing {}", d);
                         analyzed_dependency.insert(path.clone());
-                        stats +=
-                            analyze_dir(path, dependency_dir, ops, analyzed_dependency).unwrap();
+                        if let Some(stat) = cached_dependency.get(path) {
+                            stats += stat.clone();
+                        } else {
+                            let stat = analyze_dir(
+                                path,
+                                benchmark_name,
+                                dependency_dir,
+                                ops,
+                                analyzed_dependency,
+                                cached_dependency,
+                            )
+                            .unwrap();
+                            stats += stat.clone();
+                            cached_dependency.insert(path.clone(), stat);
+                        }
                     }
                 }
             }

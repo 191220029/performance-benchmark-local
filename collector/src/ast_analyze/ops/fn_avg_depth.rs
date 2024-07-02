@@ -1,6 +1,7 @@
 use tree_sitter::{Node, Tree};
 
-pub fn fn_avg_depth(tree: &Tree, _: &[u8]) -> (String, f64) {
+use crate::execute::Stats;
+pub fn fn_avg_depth(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
     let mut cursor = tree.walk();
     let mut total_depth = 0.;
     let mut function_count = 0;

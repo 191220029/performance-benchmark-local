@@ -1,6 +1,7 @@
 use tree_sitter::{Node, Tree};
 
-pub fn struct_methods(tree: &Tree, _: &[u8]) -> (String, f64) {
+use crate::execute::Stats;
+pub fn struct_methods(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
     let mut cursor = tree.walk();
     let mut total_methods = 0;
     let mut struct_count = 0;
@@ -65,7 +66,7 @@ fn find_methods(node: &Node) -> usize {
 mod test_struct_methods {
     use tree_sitter::Parser;
 
-    use crate::ast_analyze::ops::struct_methods::struct_methods;
+    use crate::{ast_analyze::ops::struct_methods::struct_methods, execute::Stats};
 
     #[test]
     fn test_struct_methods() {
@@ -102,7 +103,12 @@ mod test_struct_methods {
     "#;
 
         let tree = parser.parse(source_code, None).unwrap();
-        let (_, struct_methods) = struct_methods(&tree, source_code.as_bytes());
+        let (_, struct_methods) = struct_methods(
+            &tree,
+            source_code.as_bytes(),
+            &mut Stats::default(),
+            &String::default(),
+        );
 
         assert_eq!(struct_methods, 1.5);
     }
