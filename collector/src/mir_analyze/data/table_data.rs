@@ -289,7 +289,11 @@ pub fn from_compile_time_statistic(
 
     value.into_iter().for_each(|v| {
         v.statistic_vec.into_iter().for_each(|(m, val)| {
-            *datas.get_mut(&m).unwrap().get_mut(&v.name).unwrap() = val.algebraic_mean;
+            if let Some(s) = datas.get_mut(&m) {
+                *s.get_mut(&v.name).unwrap() = val.algebraic_mean;
+            } else {
+                panic!("Fail to find {}", m);
+            }
         });
     });
     datas

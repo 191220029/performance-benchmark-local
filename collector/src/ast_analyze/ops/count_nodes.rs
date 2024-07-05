@@ -2,7 +2,12 @@ use tree_sitter::Tree;
 
 use crate::execute::Stats;
 
-pub fn count_nodes(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
+use super::file_number::FILE_NUMBER;
+
+const NODE_COUNT: &str = "node_count";
+const AVG_NODE: &str = "nodes_per_file";
+
+pub fn count_nodes(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> Vec<(String, f64)> {
     let mut cursor = tree.walk();
     let mut count = 0;
 
@@ -19,8 +24,15 @@ pub fn count_nodes(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String,
             // If no next sibling, go up to the parent
             if !cursor.goto_parent() {
                 // If no parent, we've reached the root again
-                return ("Node count".to_string(), count as f64);
+                return vec![(NODE_COUNT.to_string(), count as f64)];
             }
         }
     }
+}
+
+pub fn avg_node_per_file(stats: &mut Stats) {
+    let files = stats.stats.remove(FILE_NUMBER).unwrap();
+    let nodes = stats.stats.remove(NODE_COUNT).unwrap();
+
+    stats.add_or_insert(AVG_NODE.to_string(), nodes / files)
 }

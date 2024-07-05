@@ -4,7 +4,7 @@ extern crate tree_sitter_rust;
 use crate::execute::Stats;
 use tree_sitter::Tree;
 
-pub fn macro_count(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
+pub fn macro_count(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> Vec<(String, f64)> {
     let mut cursor = tree.walk();
     let mut macro_calls = 0;
     let mut macro_definitions = 0;
@@ -29,12 +29,12 @@ pub fn macro_count(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String,
         while !cursor.goto_next_sibling() {
             if !cursor.goto_parent() {
                 if macro_calls == macro_definitions && macro_calls == 0 {
-                    return ("macro".to_string(), 0.);
+                    return vec![("macro".to_string(), 0.)];
                 }
-                return (
+                return vec![(
                     "macro".to_string(),
                     (macro_calls + 1) as f64 / (macro_definitions + 1) as f64,
-                );
+                )];
             }
         }
     }

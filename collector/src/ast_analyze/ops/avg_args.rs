@@ -2,7 +2,7 @@ use tree_sitter::{Node, Tree};
 
 use crate::execute::Stats;
 
-pub fn avg_args(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
+pub fn avg_args(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> Vec<(String, f64)> {
     let mut cursor = tree.walk();
     let mut total_params = 0;
     let mut function_count = 0;
@@ -21,12 +21,12 @@ pub fn avg_args(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f6
         while !cursor.goto_next_sibling() {
             if !cursor.goto_parent() {
                 if function_count == 0 {
-                    return ("avg_args".to_string(), 0.);
+                    return vec![("avg_args".to_string(), 0.)];
                 }
-                return (
+                return vec![(
                     "avg_args".to_string(),
                     total_params as f64 / function_count as f64,
-                );
+                )];
             }
         }
     }

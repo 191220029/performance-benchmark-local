@@ -1,7 +1,12 @@
 use tree_sitter::{Node, Tree};
 
 use crate::execute::Stats;
-pub fn fn_avg_depth(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
+
+const FN_LABEL: &str = "fn_count";
+const DEPTH_LABEL: &str = "fn_depth";
+const AVG_LABEL: &str = "fn_avg_depth";
+
+pub fn fn_depth(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> Vec<(String, f64)> {
     let mut cursor = tree.walk();
     let mut total_depth = 0.;
     let mut function_count = 0;
@@ -19,11 +24,10 @@ pub fn fn_avg_depth(tree: &Tree, _: &[u8], _: &mut Stats, _: &String) -> (String
 
         while !cursor.goto_next_sibling() {
             if !cursor.goto_parent() {
-                let y = total_depth as f64 / function_count as f64;
-                if y.is_nan() {
-                    return ("fn_avg_depth".to_string(), 0.);
-                }
-                return ("fn_avg_depth".to_string(), y);
+                return vec![
+                    (FN_LABEL.to_string(), function_count as f64),
+                    (DEPTH_LABEL.to_string(), total_depth as f64),
+                ];
             }
         }
     }
@@ -50,5 +54,16 @@ fn calculate_node_depth(node: &Node) -> f64 {
             }
             depth -= 1;
         }
+    }
+}
+
+pub fn fn_avg_depth(stats: &mut Stats) {
+    let fns = stats.stats.remove(FN_LABEL).unwrap();
+    let depths = stats.stats.remove(DEPTH_LABEL).unwrap();
+
+    if fns == 0. {
+        stats.add_or_insert(AVG_LABEL.to_string(), 0.);
+    } else {
+        stats.add_or_insert(AVG_LABEL.to_string(), fns / depths);
     }
 }

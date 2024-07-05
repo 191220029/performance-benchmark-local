@@ -6,7 +6,12 @@ use crate::execute::Stats;
 // List of keywords or function names related to concurrency or parallelism
 const CONCURRENCY_KEYWORDS: &[&str] = &["std::thread", "tokio", "rayon", "async", "await"];
 
-pub fn parallel_calls(tree: &Tree, src_code: &[u8], _: &mut Stats, _: &String) -> (String, f64) {
+pub fn parallel_calls(
+    tree: &Tree,
+    src_code: &[u8],
+    _: &mut Stats,
+    _: &String,
+) -> Vec<(String, f64)> {
     let mut cursor = tree.walk();
     let mut concurrency_calls = 0;
     let mut pool: HashSet<String> =
@@ -35,13 +40,12 @@ pub fn parallel_calls(tree: &Tree, src_code: &[u8], _: &mut Stats, _: &String) -
             });
         } else if node.kind() == "async_block" {
             concurrency_calls += 1;
-        } else if (node.kind() == "call_expression" || node.kind() == "macro_invocation")
-            && is_concurrency_related(
-                &node.utf8_text(src_code).unwrap().to_string().as_str(),
-                &pool,
-            )
-        {
-            concurrency_calls += find_parallel_call_in_call_macro(&node, src_code, &pool);
+        } else if node.kind() == "call_expression" || node.kind() == "macro_invocation" {
+            if let Ok(text) = node.utf8_text(src_code) {
+                if is_concurrency_related(&text.to_string().as_str(), &pool) {
+                    concurrency_calls += find_parallel_call_in_call_macro(&node, src_code, &pool);
+                }
+            }
         }
 
         if cursor.goto_first_child() {
@@ -50,7 +54,7 @@ pub fn parallel_calls(tree: &Tree, src_code: &[u8], _: &mut Stats, _: &String) -
 
         while !cursor.goto_next_sibling() {
             if !cursor.goto_parent() {
-                return ("parallel_calls".to_string(), concurrency_calls as f64);
+                return vec![("parallel_calls".to_string(), concurrency_calls as f64)];
             }
         }
     }
@@ -122,12 +126,14 @@ mod test_struct_methods {
             "#;
 
         let tree = parser.parse(source_code, None).unwrap();
-        let (_, parallel_calls) = parallel_calls(
+        let (_, parallel_calls) = *parallel_calls(
             &tree,
             source_code.as_bytes(),
             &mut Stats::default(),
             &String::default(),
-        );
+        )
+        .first()
+        .unwrap();
 
         assert_eq!(parallel_calls, 4.);
     }

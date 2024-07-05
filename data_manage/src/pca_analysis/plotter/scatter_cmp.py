@@ -58,10 +58,10 @@ if __name__ == '__main__':
             automargin=True,
             color="black"
         ),
-        plot_bgcolor="lightgrey",
+        # plot_bgcolor="lightgrey",
         paper_bgcolor="white",
-        width=800,
-        height=800,
+        width=600,
+        height=600,
     )
 
     fig.write_image(out_path)

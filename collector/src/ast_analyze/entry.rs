@@ -8,7 +8,7 @@ use std::{
 use tree_sitter::{Parser, Tree};
 
 use crate::{
-    ast_analyze::parse::ast_ops,
+    ast_analyze::parse::{ast_ops, reduce_ops},
     benchmark::{benchmark::Benchamrk, profile::Profile, scenario::Scenario},
     compile_time::discover_benchmark_suit,
     execute::Stats,
@@ -28,6 +28,8 @@ pub fn ast_code_analyze(
 
     let ops = ast_ops();
 
+    let reduce_ops = reduce_ops();
+
     let mut results = vec![];
 
     let cached_dependency = &mut HashMap::default();
@@ -40,6 +42,7 @@ pub fn ast_code_analyze(
                 &b,
                 &dependency_dir,
                 &ops,
+                &reduce_ops,
                 cached_dependency,
             )],
         });
@@ -62,7 +65,8 @@ pub fn ast_code_analyze(
 fn analyze_benchmark(
     benchmark: &Benchamrk,
     dependency_dir: &PathBuf,
-    ops: &Vec<Box<dyn Fn(&Tree, &[u8], &mut Stats, &String) -> (String, f64)>>,
+    ops: &Vec<Box<dyn Fn(&Tree, &[u8], &mut Stats, &String) -> Vec<(String, f64)>>>,
+    reduce_ops: &Vec<Box<dyn Fn(&mut Stats)>>,
     cached_dependency: &mut HashMap<PathBuf, Stats>,
 ) -> CompileTimeResult {
     println!(
@@ -70,7 +74,7 @@ fn analyze_benchmark(
         benchmark.name,
         benchmark.path.to_str().unwrap()
     );
-    let stats = analyze_dir(
+    let mut stats = analyze_dir(
         &benchmark.path,
         &benchmark.name,
         dependency_dir,
@@ -79,6 +83,11 @@ fn analyze_benchmark(
         cached_dependency,
     )
     .unwrap();
+
+    reduce_ops.iter().for_each(|op| {
+        op(&mut stats);
+    });
+
     CompileTimeResult::new(
         benchmark.name.clone(),
         0,
@@ -92,7 +101,7 @@ fn analyze_dir(
     p: &PathBuf,
     benchmark_name: &String,
     dependency_dir: &PathBuf,
-    ops: &Vec<Box<dyn Fn(&Tree, &[u8], &mut Stats, &String) -> (String, f64)>>,
+    ops: &Vec<Box<dyn Fn(&Tree, &[u8], &mut Stats, &String) -> Vec<(String, f64)>>>,
     analyzed_dependency: &mut HashSet<PathBuf>,
     cached_dependency: &mut HashMap<PathBuf, Stats>,
 ) -> anyhow::Result<Stats> {
@@ -123,33 +132,34 @@ fn analyze_dir(
                 }
                 let tree = parser.parse(&buf, None).unwrap();
                 ops.iter().for_each(|op| {
-                    let t = op(&tree, &buf, &mut stats, benchmark_name);
-                    stats.add_or_insert(t.0, t.1)
+                    let res = op(&tree, &buf, &mut stats, benchmark_name);
+                    res.into_iter().for_each(|t| stats.add_or_insert(t.0, t.1));
                 });
-            } else if entry.file_name().to_str().unwrap().eq("Cargo.lock") {
-                for d in read_dependencies(&entry.path()).unwrap() {
-                    let path = &d.path(dependency_dir);
-                    if path.exists() && !analyzed_dependency.contains(path) {
-                        println!("  |---analyzing {}", d);
-                        analyzed_dependency.insert(path.clone());
-                        if let Some(stat) = cached_dependency.get(path) {
-                            stats += stat.clone();
-                        } else {
-                            let stat = analyze_dir(
-                                path,
-                                benchmark_name,
-                                dependency_dir,
-                                ops,
-                                analyzed_dependency,
-                                cached_dependency,
-                            )
-                            .unwrap();
-                            stats += stat.clone();
-                            cached_dependency.insert(path.clone(), stat);
-                        }
-                    }
-                }
             }
+            // } else if entry.file_name().to_str().unwrap().eq("Cargo.lock") {
+            //     for d in read_dependencies(&entry.path()).unwrap() {
+            //         let path = &d.path(dependency_dir);
+            //         if path.exists() && !analyzed_dependency.contains(path) {
+            //             println!("  |---analyzing {}", d);
+            //             analyzed_dependency.insert(path.clone());
+            //             if let Some(stat) = cached_dependency.get(path) {
+            //                 stats += stat.clone();
+            //             } else {
+            //                 let stat = analyze_dir(
+            //                     path,
+            //                     benchmark_name,
+            //                     dependency_dir,
+            //                     ops,
+            //                     analyzed_dependency,
+            //                     cached_dependency,
+            //                 )
+            //                 .unwrap();
+            //                 stats += stat.clone();
+            //                 cached_dependency.insert(path.clone(), stat);
+            //             }
+            //         }
+            //     }
+            // }
         }
     }
     Ok(stats)
